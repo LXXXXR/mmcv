@@ -129,21 +129,34 @@ def load_pavimodel_dist(model_path, map_location=None):
             'Please install pavi to load checkpoint from modelcloud.')
     rank, world_size = get_dist_info()
     rank = int(os.environ.get('LOCAL_RANK', rank))
+    print(f'world_size: {world_size}, rank: {rank}.')
     if rank == 0:
+        print(f'Before getting model from modelcloud, at rank {rank}.')
         model = modelcloud.get(model_path)
+        print(f'Got model from modelcloud, at rank {rank}.')
         with TemporaryDirectory() as tmp_dir:
+            print(f'Created temporary dir, at rank {rank}.')
             downloaded_file = osp.join(tmp_dir, model.name)
             model.download(downloaded_file)
+            print(f'Finished downloading, at rank {rank}.')
             checkpoint = torch.load(downloaded_file, map_location=map_location)
+            print(f'Finished loading checkpoint, at rank {rank}.')
     if world_size > 1:
+        print(f'Waiting for other ranks, at rank {rank}.')
         torch.distributed.barrier()
+        print(f'Continue, at rank {rank}.')
         if rank > 0:
+            print(f'Before getting model from modelcloud, at rank {rank}.')
             model = modelcloud.get(model_path)
+            print(f'Got model from modelcloud, at rank {rank}.')
             with TemporaryDirectory() as tmp_dir:
+                print(f'Created temporary dir, at rank {rank}.')
                 downloaded_file = osp.join(tmp_dir, model.name)
                 model.download(downloaded_file)
+                print(f'Finished downloading, at rank {rank}.')
                 checkpoint = torch.load(
                     downloaded_file, map_location=map_location)
+                print(f'Finished loading checkpoint, at rank {rank}.')
     return checkpoint
 
 
